@@ -1,0 +1,24 @@
+# Optional: Render Dashboard → New → Blueprint → connect repo with this file.
+services:
+  - type: web
+    name: crustcorner-api
+    runtime: node
+    rootDir: server
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CLIENT_ORIGIN
+        value: https://play.thecrust.io
+      - key: ALLOWED_ORIGINS
+        value: https://play.thecrust.io
+      - key: SOLANA_RPC
+        value: https://api.devnet.solana.com
+      - key: NFT_NETWORK
+        value: devnet
+      - key: MONGODB_URI
+        sync: false

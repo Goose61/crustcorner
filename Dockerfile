@@ -1,3 +1,4 @@
+# Full stack (API + static game). Build from repo root: docker compose up --build
 FROM node:20-alpine
 WORKDIR /app/server
 COPY server/package.json server/package-lock.json ./

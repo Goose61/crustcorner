@@ -11,6 +11,70 @@ MongoDB lives in **[MongoDB Atlas](https://www.mongodb.com/cloud/atlas)** (free 
 
 ---
 
+## Quick setup: thecrust.io
+
+| URL | Purpose | Host |
+|-----|---------|------|
+| **https://play.thecrust.io** | Game (players open this) | Vercel |
+| **https://api.thecrust.io** | Wallet auth, saves, NFTs | Railway / Render |
+
+### A. Cloudflare DNS (zone: `thecrust.io`)
+
+1. Log in to [Cloudflare Dashboard](https://dash.cloudflare.com) → **thecrust.io** → **DNS** → **Records**.
+
+2. **Game → Vercel** (after step B below, Vercel shows the exact target; usually one of these):
+
+   | Type | Name | Target | Proxy |
+   |------|------|--------|-------|
+   | CNAME | `play` | `cname.vercel-dns.com` | **DNS only** (grey cloud) recommended |
+
+   If Vercel gives a project-specific target (e.g. `xxx.vercel-dns-017.com`), use that instead of the generic CNAME.
+
+3. **API → Railway/Render** (after step C):
+
+   | Type | Name | Target | Proxy |
+   |------|------|--------|-------|
+   | CNAME | `api` | your Railway/Render hostname | DNS only (grey cloud) |
+
+4. **SSL/TLS** → **Overview** → set to **Full (strict)** once both sides have HTTPS.
+
+Do **not** point `play` at your API host; the browser game must stay on Vercel.
+
+### B. Vercel (play.thecrust.io)
+
+1. Import repo [Goose61/crustcorner](https://github.com/Goose61/crustcorner).
+   - **Settings → General → Root Directory:** leave **blank** (repository root). If this is `server`, the build fails with `Cannot find module .../server/scripts/vercel-config.js` and the game files are not deployed.
+2. **Settings → Environment Variables → Production:**
+   - `CRUST_API_BASE` = `https://api.thecrust.io`
+3. **Settings → Domains → Add** → `play.thecrust.io`.
+4. Follow Vercel’s DNS instructions; add the CNAME in Cloudflare if not already done.
+5. **Deployments → Redeploy** after setting `CRUST_API_BASE`.
+
+### C. API host (api.thecrust.io)
+
+Deploy folder `server` on Railway or Render. Environment:
+
+```env
+MONGODB_URI=mongodb+srv://...@cluster....mongodb.net/crust_corner?retryWrites=true&w=majority
+JWT_SECRET=<long random string>
+CLIENT_ORIGIN=https://play.thecrust.io
+ALLOWED_ORIGINS=https://play.thecrust.io
+SOLANA_RPC=https://api.devnet.solana.com
+NFT_NETWORK=devnet
+```
+
+Add custom domain **api.thecrust.io** in the host’s dashboard; point Cloudflare CNAME `api` to that hostname.
+
+Test: `https://api.thecrust.io/api/health` → `{ "ok": true, "mongo": true }`.
+
+### D. Verify
+
+1. Open **https://play.thecrust.io**
+2. Connect wallet (no CORS errors in F12 console).
+3. Save line shows **Cloud +** when synced.
+
+---
+
 ## 1. GitHub
 
 1. Create a repo and push this project.
@@ -49,18 +113,18 @@ MongoDB lives in **[MongoDB Atlas](https://www.mongodb.com/cloud/atlas)** (free 
 
 **Render / Fly:** same env vars; start command `node index.js` in `server/`.
 
+### Render setup
+
+Use the click-by-click guide: **[RENDER-SETUP.md](RENDER-SETUP.md)** (form fields, env vars, fixing Docker, custom domain, Vercel root directory).
+
 ---
 
 ## 4. Frontend on Vercel
 
 1. [vercel.com](https://vercel.com) → Import GitHub repo.
-2. **Root directory:** project root (not `server`).
-3. Framework: **Other** (uses [`vercel.json`](vercel.json)).
-4. **Environment variable (Production):**
-
-   `CRUST_API_BASE` = `https://YOUR-API-URL` (no trailing slash)
-
-   The build script injects this into `index.html` as `meta name="crust-api-base"`.
+2. **Settings → General → Root Directory:** leave **empty** (never `server`). See [RENDER-SETUP.md](RENDER-SETUP.md) § E.
+3. Framework: **Other** (uses [`vercel.json`](vercel.json) — static deploy, no Node build).
+4. **API URL:** `config.js` uses `https://api.thecrust.io` on `play.thecrust.io` automatically. Optional env `CRUST_API_BASE` only if you use the optional `scripts/vercel-config.js` build step.
 
 5. Deploy. You get something like `https://crust-corner.vercel.app`.
 

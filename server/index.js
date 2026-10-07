@@ -50,7 +50,7 @@ async function start() {
   const uri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/crust_corner';
   await mongoose.connect(uri);
   console.log('MongoDB connected');
-  app.listen(PORT, () => {
+  app.listen(PORT, '0.0.0.0', () => {
     console.log(`Crust Corner server http://localhost:${PORT}`);
     console.log(`API health http://localhost:${PORT}/api/health`);
   });
