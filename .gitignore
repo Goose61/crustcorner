@@ -1,0 +1,6 @@
+server/node_modules/
+server/.env
+.env
+atlas-credentials.env
+.DS_Store
+.vercel

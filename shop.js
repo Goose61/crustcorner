@@ -1,0 +1,48 @@
+'use strict';
+let shopCategory='OVENS',shopStorage=false;
+s.inventory=s.inventory||[];
+const shopCategories=['OVENS','FURNITURE','WALLS','FLOORS','DECOR','STAFF','SPECIALS','EXPAND'];
+function hideShop(){$('shopTray').hidden=true;document.body.classList.remove('shopping');}
+function openShop(){if(!build&&!beginBuild())return;cancelPlacement();closePanel();$('shopTray').hidden=false;document.body.classList.add('shopping');renderShop();}
+function shopKey(o){return Object.keys(W.TYPES).find(k=>{const t=W.TYPES[k];return (t.variant||'')===(o.variant||'')&&t.type===o.type&&(!t.model||t.model===(o.model||'classic'))&&(!t.design||t.design===o.design);});}
+function renderShop(){
+ $('storedCount').textContent=s.inventory.length;
+ $('inventoryTab').setAttribute('aria-pressed',String(shopStorage));
+ $('shopTabs').innerHTML=shopCategories.map((c,i)=>`<button style="--tab-color:${['#ed805e','#f1bd43','#76cbd7','#97c777','#b99bdd','#ed9ec0','#efa963','#79bacf'][i]}" data-category="${c}" aria-pressed="${!shopStorage&&c===shopCategory}">${c}</button>`).join('');
+ const card=(t,action,label,price,owned=false)=>{const d=t.description?`<small class="item-desc">${t.description}</small>`:'';return `<article class="shop-tile${d?' has-desc':''}"><div class="item-art"><img src="assets/${t.sprite}.png" alt=""><small>${owned?'OWNED':'LV '+(t.level||1)}</small></div><strong>${t.name}</strong>${d}<div class="item-buy"><span>${owned?'Ready':`<i>●</i> ${price.toLocaleString('en-US')}`}</span><button title="${!owned&&s.coins<price+12?'Earn '+(price+12-s.coins)+' more coins to buy':'Choose where to place it'}" ${action} ${!owned&&(s.coins<price+12||W.level(s)<(t.level||1))?'disabled':''}>${label}</button></div></article>`;};
+ let html='';
+ if(shopStorage){html=s.inventory.map(o=>{const k=shopKey(o);return k?card(W.TYPES[k],`data-restore="${o.id}"`,'PLACE',0,true):'';}).join('')||'<div class="shop-empty"><strong>Your storage is empty</strong><span>Tap a spare piece in the room, then choose Store.</span></div>';}
+ else if(shopCategory==='WALLS'){html=Object.entries(W.WALLPAPERS).map(([key,t])=>{const owned=s.wallpapers.includes(key),active=s.wallpaper===key,locked=W.level(s)<t.level;return `<article class="shop-tile"><div class="wall-swatch" style="background:${t.pattern?`repeating-linear-gradient(0deg,transparent 0 17px,${t.trim}88 18px 19px,transparent 20px 36px),repeating-linear-gradient(90deg,${t.colors[0]} 0 28px,${t.trim}88 29px 30px,${t.colors[1]} 31px 60px)`:`repeating-linear-gradient(90deg,${t.colors[0]} 0 18px,${t.colors[1]} 18px 36px)`};border-color:${t.trim}"></div><strong>${t.name}</strong><small class="wall-level">LV ${t.level}</small><div class="item-buy"><span>${owned?'Owned':'● '+t.price.toLocaleString('en-US')}</span><button data-wallpaper="${key}" ${active||locked||(!owned&&s.coins<t.price+12)?'disabled':''}>${active?'ON':locked?'LOCKED':owned?'APPLY':'BUY'}</button></div></article>`;}).join('');}
+ else if(shopCategory==='FLOORS'){html=Object.entries(W.FLOORS).map(([key,t])=>{const owned=s.floors.includes(key),active=s.floor===key,locked=!owned&&W.level(s)<t.level,short=!owned&&s.coins<t.price+12;return `<article class="shop-tile"><div class="floor-swatch" aria-label="${t.name} preview">${Array.from({length:16},(_,i)=>`<span style="background:${W.floorColor(key,i%4,Math.floor(i/4))};border-color:${t.line}"></span>`).join('')}</div><strong>${t.name}</strong><small class="wall-level">LV ${t.level} · Whole room</small><div class="item-buy"><span>${owned?'Owned':'● '+t.price.toLocaleString('en-US')}</span><button data-floor="${key}" title="${short?'Keep 12 coins for cooking':'Buy once, switch anytime'}" ${active||locked||short?'disabled':''}>${active?'ON':locked?'LOCKED':owned?'APPLY':'BUY'}</button></div></article>`;}).join('');}
+ else if(shopCategory==='STAFF'){html=Object.entries(W.STAFF).map(([key,t])=>{const hired=s.staff.includes(key),locked=W.level(s)<t.level,short=s.coins<t.price+12;return `<article class="shop-tile staff-tile"><div class="item-art"><img src="assets/${t.sprite}.png" alt=""><small>LV ${t.level}</small></div><strong>${t.name}</strong><small class="staff-task">${t.task}</small><div class="item-buy"><span>${hired?'Hired':'● '+t.price.toLocaleString('en-US')}</span><button data-hire="${key}" ${hired||locked||short?'disabled':''}>${hired?'ON DUTY':locked?'LOCKED':'HIRE'}</button></div></article>`;}).join('');}
+ else if(shopCategory==='SPECIALS'){html=R.map((r,i)=>({r,i})).filter(({r,i})=>i>=3&&!r.side).map(({r,i})=>`<article class="shop-tile special-card"><div class="item-art"><img src="assets/pizza.png" alt=""><small>LV ${r.level}</small></div><strong>${r.name}</strong><span class="special-price">Bake ● ${r.cost} · Sell ● ${r.price}</span><div class="item-buy"><span>${r.time/1000}s</span><button data-special="${i}" ${W.level(s)<r.level?'disabled':''}>${W.level(s)<r.level?'LOCKED':'COOK'}</button></div></article>`).join('');}
+ else if(shopCategory==='EXPAND'){const e=W.expansionInfo(s);html=`<article class="shop-expansion"><strong>${e.purchased} / 20 expansions</strong><span>${s.size} × ${s.size} → ${e.nextSize} × ${e.nextSize}</span><b>${e.max?'Complete':'● '+e.price.toLocaleString('en-US')}</b><button id="shopExpand">${e.max?'VIEW':'VIEW & EXPAND'}</button></article>`;}
+ else{const keys=Object.keys(W.TYPES).filter(k=>{const t=W.TYPES[k];return shopCategory==='OVENS'?['oven','fryer','soda'].includes(t.type):shopCategory==='FURNITURE'?['table','counter','chair','bus_station','garbage_can','sink','dishwasher'].includes(t.type):shopCategory==='DECOR'?['plant','sign','decor'].includes(t.type):false;});html=keys.map(k=>card(W.TYPES[k],`data-shop-buy="${k}"`,'BUY & PLACE',W.TYPES[k].price)).join('');if(!html)html=`<div class="shop-empty"><strong>${shopCategory==='STAFF'?'Your chef is already on duty':shopCategory==='WALLS'?'A fresh look for your walls':'A new floor for your corner'}</strong><span>${shopCategory==='STAFF'?'More staff options coming soon.':'More styles coming soon.'}</span></div>`;}
+ $('shopItems').innerHTML=html;
+ if(!shopWheelBound){shopWheelBound=true;$('shopItems').addEventListener('wheel',ev=>{const el=ev.currentTarget;if(el.scrollWidth<=el.clientWidth)return;ev.preventDefault();el.scrollLeft+=ev.deltaY;},{passive:false});}
+}
+let shopWheelBound=false;
+$('shopTabs').onclick=ev=>{const b=ev.target.closest('[data-category]');if(b){shopCategory=b.dataset.category;shopStorage=false;renderShop();}};
+$('inventoryTab').onclick=()=>{shopStorage=true;renderShop();};
+$('closeShop').onclick=()=>{hideShop();finishBuild();};
+function buyShopItem(key){
+ const t=W.TYPES[key];if(!t)return false;
+ if(W.level(s)<(t.level||1)){notify('Unlocks at level '+t.level+'.');return false;}
+ if(s.coins<t.price+12){notify('Earn '+(t.price+12-s.coins).toLocaleString('en-US')+' more coins to buy this.');return false;}
+ if(s.objects.length+s.inventory.length>=W.MAX_OBJECTS){notify('Your furniture and storage are full.');return false;}
+ const item=W.makeObject(key,s.nextId++);if(!item)return false;
+ s.coins-=t.price;s.inventory.push(item);save();hud();
+ startPlacement(key);placement.object={...item};placement.stored=true;placement.price=0;
+ $('buildMessage').textContent='Purchased '+t.name+'! Tap a free spot to place it, or Cancel to keep it in Storage.';
+ notify('Purchased '+t.name+'! Tap a spot to place it.');return true;
+}
+$('shopItems').onclick=ev=>{const b=ev.target.closest('button');if(!b)return;if(b.dataset.shopBuy){const key=b.dataset.shopBuy;buyShopItem(key);}if(b.dataset.restore){const o=s.inventory.find(o=>o.id===Number(b.dataset.restore));if(!o)return;startPlacement(shopKey(o));placement.object={...o};placement.stored=true;placement.price=0;$('buildMessage').textContent='Place your stored item. Tap an empty spot.';}if(b.dataset.wallpaper){if(W.buyWallpaper(s,b.dataset.wallpaper)){save();hud();renderShop();notify('Wallpaper applied to both walls.');}}if(b.dataset.floor){if(W.buyFloor(s,b.dataset.floor)){save();hud();renderShop();notify('Floor applied and saved! Switch owned floors for free.');}else notify('Check your level and keep 12 coins for cooking.');}if(b.dataset.hire){const key=b.dataset.hire;if(W.hireStaff(s,key)){save();hud();renderShop();notify(W.STAFF[key].name+' hired! '+W.STAFF[key].task);}else notify('Reach the required level and keep 12 coins for cooking.');}if(b.dataset.special){hideShop();finishBuild();chooseOven();}if(b.id==='shopExpand')expansion();};
+$('storeItem').onclick=()=>{
+ const o=placement?.original?find(placement.original):null;if(!o)return;
+ if(o.type==='cash'||(['oven','counter','chair'].includes(o.type)&&s.objects.filter(x=>x.type===o.type).length<=1)){notify('Keep at least one oven, counter, register and chair in the room.');return;}
+ if(o.job||(o.usesSinceClean||0)>0||o.tip||o.stock?.some(n=>n)||(o.trash||o.dishes)){notify('Finish cooking, clean, and empty this piece before storing it.');return;}
+ if(s.inventory.length>=W.MAX_OBJECTS){notify('Storage is full.');return;}
+ s.inventory.push({...o});s.objects=s.objects.filter(x=>x.id!==o.id);cancelPlacement();save();hud();notify('Stored safely. Find it in SHOP → Storage.');
+};
+// Keep affordability current without resetting scroll position or focus.
+setInterval(()=>{if($('shopTray').hidden)return;for(const b of $('shopItems').querySelectorAll('[data-shop-buy]'))b.disabled=s.coins<W.TYPES[b.dataset.shopBuy].price+12||W.level(s)<(W.TYPES[b.dataset.shopBuy].level||1);for(const b of $('shopItems').querySelectorAll('[data-hire]')){const t=W.STAFF[b.dataset.hire];b.disabled=s.staff.includes(b.dataset.hire)||s.coins<t.price+12||W.level(s)<t.level;}},500);
