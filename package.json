@@ -1,0 +1,9 @@
+{
+  "name": "crust-corner",
+  "private": true,
+  "description": "Repo root shim so Render can build when Root Directory is not set to server/",
+  "scripts": {
+    "postinstall": "npm install --prefix server",
+    "start": "npm start --prefix server"
+  }
+}

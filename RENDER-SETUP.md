@@ -24,7 +24,7 @@ This is **only** the Node API in the `server/` folder. The game files stay on **
 | **Name** | `crustcorner-api` (any name you like) |
 | **Region** | Any (e.g. Frankfurt or Oregon) |
 | **Branch** | `main` |
-| **Root Directory** | `server` ← type exactly this, no slash |
+| **Root Directory** | `server` ← type exactly this, no slash (or leave empty if you use the repo root `package.json` shim after latest push) |
 | **Language** / **Runtime** | **Node** (not Python, not Docker) |
 | **Build Command** | `npm install` |
 | **Start Command** | `npm start` |
@@ -57,7 +57,19 @@ This is **only** the Node API in the `server/` folder. The game files stay on **
 
 ---
 
-## B. If Render is using Docker (build log mentions `Dockerfile`)
+## B. Build error: `Could not read package.json` / `ENOENT .../src/package.json`
+
+Render is building the **repo root**, not `server/`.
+
+1. Service → **Settings** → **Build & Deploy**.
+2. **Root Directory** → enter `server` → **Save**.
+3. **Manual Deploy** → **Deploy latest commit**.
+
+*(Alternatively: push the repo root `package.json` that runs `npm install` + `npm start` inside `server/`, and leave Root Directory empty.)*
+
+---
+
+## C. If Render is using Docker (build log mentions `Dockerfile`)
 
 That happens when Render sees a Dockerfile or you picked Docker earlier.
 
@@ -77,7 +89,7 @@ The repo should **not** ship a `server/Dockerfile` anymore (Docker is only for l
 
 ---
 
-## C. Health check (optional but recommended)
+## D. Health check (optional but recommended)
 
 1. Service → **Settings** → **Health Checks** (or under Build & Deploy).
 2. **Health Check Path** → `/api/health`
@@ -85,7 +97,7 @@ The repo should **not** ship a `server/Dockerfile` anymore (Docker is only for l
 
 ---
 
-## D. Custom domain `api.thecrust.io`
+## E. Custom domain `api.thecrust.io`
 
 1. Service → **Settings** → **Custom Domains**.
 2. **Add Custom Domain** → `api.thecrust.io`.
@@ -100,7 +112,7 @@ The repo should **not** ship a `server/Dockerfile` anymore (Docker is only for l
 
 ---
 
-## E. Vercel (game) — one setting that breaks everything
+## F. Vercel (game) — one setting that breaks everything
 
 Vercel must deploy the **whole repo**, not `server/`.
 
